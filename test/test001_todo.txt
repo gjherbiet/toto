@@ -1,0 +1,11 @@
+- This task is of normal importance
+! This task is marked as important due:2011-02-18
+XThis task is completed but has nor space after the marker.
+This task does not have any marker
+_ This task is not important and can be done later due:2011-02-21
+X This task is completed due:2011-01-01
++ This task has another way to be important
+-This task has a marker, but no space due:2011-02-20
+!This task is important, but has no space after the marker
++Another important task with no space
+_Another low-priority task with no space

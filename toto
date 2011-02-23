@@ -1,0 +1,513 @@
+#!/bin/bash
+##############################################################################
+# File   : toto.sh
+# Author : Guillaume-Jean Herbiet  <guillaume-jean@herbiet.net>
+#
+#
+# Copyright (c) 2011 Guillaume-Jean Herbiet     (http://herbiet.net)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Guillaume-Jean Herbiet
+# <guillaume-jean@herbiet.net>
+#
+##############################################################################
+
+VERSION="0.1"
+function version {
+	echo "This is $(basename $0) v. $VERSION"
+	echo "Copyright (c) 2011 Guillaume-Jean Herbiet  (http://herbiet.net)"
+	echo "This is free software; see the source for copying conditions. There is NO"
+	echo "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+}
+
+function toto_action {
+	ACTION=$1 && [ -z $1 ] && ACTION="list"
+	case "$ACTION"
+		in
+			ls|list)
+				[ $VERBOSE ] && echo "Doing 'list'"
+				shift
+				if [ $# -lt 1 ]; then
+					toto_list "base"
+				else
+					toto_list $@
+				fi
+				;;
+			la|list-all)
+				[ $VERBOSE ] && echo "Doing 'list all'"
+				shift
+				toto_list "all"
+				;;
+			ll|list-log)
+				[ $VERBOSE ] && echo "Doing 'list log'"
+				shift
+				toto_list "log"
+				;;
+			r|rank)
+				[ $VERBOSE ] && echo "Doing 'rank'"
+				shift
+				toto_list "+" "=" "_"
+				;;
+			D|due)
+				[ $VERBOSE ] && echo "Doing 'due'"
+				shift
+				toto_due $1
+				;;
+			a|add)
+				[ $VERBOSE ] && echo "Doing 'add'"
+				shift
+				echo $@ >> $TOTO_TASK_FILE
+				;;
+			!|+|-|=|_|X)
+				if echo $@ | $GREP_CMD -E "^(!|\+|-|=|_) [0-9]{1,}$"; then
+					[ $VERBOSE ] && echo "Doing 'quick mark'"
+					toto_mark $@
+				else
+					[ $VERBOSE ] && echo "Doing 'quick add'"
+					echo $@ >> $TOTO_TASK_FILE
+				fi
+				;;
+			m|mark)
+				[ $VERBOSE ] && echo "Doing 'mark'"
+				shift
+				toto_mark $2 $1
+				;;
+			i|h|important|high|d|default|u|l|unimportant|low|c|completed|done)
+				[ $VERBOSE ] && echo "Doing quick 'mark'"
+				toto_mark $1 $2
+				;;
+			L|log)
+				[ $VERBOSE ] && echo "Doing 'log'"
+				shift
+				toto_log $1
+				;;
+			s|search)
+				[ $VERBOSE ] && echo "Doing 'search'"
+				shift
+				toto_search $@
+				;;
+			e|edit)
+				[ $VERBOSE ] && echo "Doing 'edit'"
+				shift
+				toto_edit $@
+				;;
+			*)
+				[ $VERBOSE ] && echo "Doing 'quick add'"
+				echo $@ >> $TOTO_TASK_FILE
+				;;
+	esac
+}
+
+function toto_list {
+	[ $DEBUG ] && echo "Calling toto_list ( $@ )"
+
+	for i in $@; do
+		case "$i"
+		in
+			a|all)
+				$GREP_CMD $GREP_ARGS ".*" "$TOTO_TASK_FILE"
+				shift
+				;;
+			!|+|i|h|important|high)
+				$GREP_CMD $GREP_ARGS "^(!|\+)" "$TOTO_TASK_FILE"
+				shift
+				;;
+			_|u|l|unimportant|low)
+				$GREP_CMD $GREP_ARGS "^_" "$TOTO_TASK_FILE"
+				shift
+				;;
+			-|=|d|default)
+				$GREP_CMD $GREP_ARGS "^[^!\+_X]" "$TOTO_TASK_FILE"
+				shift
+				;;
+			X|c|completed|done)
+				$GREP_CMD $GREP_ARGS "^X" "$TOTO_TASK_FILE"
+				shift
+				;;
+			L|log)
+				$GREP_CMD $GREP_ARGS ".*" "$TOTO_LOG_FILE"
+				shift
+				;;
+			b|both)
+				$GREP_CMD $GREP_ARGS -H ".*" "$TOTO_TASK_FILE" "$TOTO_LOG_FILE"
+				shift
+				;;
+			*)
+				$GREP_CMD $GREP_ARGS "^[^X]" "$TOTO_TASK_FILE"
+				shift
+				;;
+		esac
+	done
+}
+
+function toto_search {
+	[ $DEBUG ] && echo "Calling toto_search ( $@ )"
+	
+	case "$1"
+	in
+		l|log)
+			shift
+			[ $DEBUG ] && echo "Searching in log file $TOTO_LOG_FILE"
+			SEARCH="$@"
+			$GREP_CMD $GREP_ARGS "$SEARCH" "$TOTO_LOG_FILE"
+			;;
+		b|both)
+			shift
+			[ $DEBUG ] && echo "Searching in task file $TOTO_TASK_FILE and log file $TOTO_LOG_FILE"
+			SEARCH="$@"
+			$GREP_CMD $GREP_ARGS -H "$SEARCH" "$TOTO_TASK_FILE" "$TOTO_LOG_FILE"
+			;;
+		*)
+			[ $DEBUG ] && echo "Searching in task file $TOTO_TASK_FILE"
+			SEARCH="$@"
+			$GREP_CMD $GREP_ARGS "$SEARCH" "$TOTO_TASK_FILE"
+			;;
+	esac
+}
+
+function toto_due {
+	[ $DEBUG ] && echo "Calling toto_due ( $@ )"
+	
+	PATTERN="^[^X].*due:"
+	
+	if [[ -z $1 || $1 == "0" ]]; then
+		TODAY=$(date -j +%Y-%m-%d)
+		$GREP_CMD $GREP_ARGS "$PATTERN$TODAY" "$TOTO_TASK_FILE"
+	else
+		case "$1"
+		in
+			o|overdue|+*)
+				$GREP_CMD $GREP_ARGS "$PATTERN" "$TOTO_TASK_FILE" | while read LINE; do
+					DATE_STRING=$(echo $LINE | $SED_CMD -e 's/^[^X].*due:\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\)/\1/g')
+					LINE_DATE=$(date -j -f %Y-%m-%d $DATE_STRING +%s)
+					TODAY=$(date -j +%s)
+					if [[ $1 == "o" || $1 == "overdue" ]]; then
+						[ $LINE_DATE -le $TODAY ] && echo $LINE
+					else
+						DUE_DATE=$(date -j -v $1 +%s)
+						[ $TODAY -le $LINE_DATE ] && [ $LINE_DATE -le $DUE_DATE ] && \
+							echo $LINE
+					fi
+				done
+				;;
+			*)
+				[ $DEBUG ] && echo "Using free form due date"
+				$GREP_CMD $GREP_ARGS "due:$1" "$TOTO_TASK_FILE"
+				;;
+		esac
+	fi
+}
+
+function toto_edit {
+	[ $DEBUG ] && echo "Calling toto_edit ( $@ )"
+	
+	LINE=$1;
+	shift;
+	if [[ $LINE == "a" || $LINE == "all" ]]; then
+		PATTERN="s/$@/g"
+	else
+		PATTERN="${LINE}s/$@/g"
+	fi
+	$SED_CMD -i -e "$PATTERN" $TOTO_TASK_FILE
+}
+
+function toto_mark {
+	[ $DEBUG ] && echo "Calling toto_mark ( $@ )"
+	
+	if [[ -z $1 || -z $2 ]]; then
+		oops "This function requires a task number as first argument and a marker as second argument"
+		usage
+		exit 5
+	else
+		MARKER=
+		case "$1"
+		in
+			_|u|l|unimportant|low)
+				MARKER="_"
+				;;
+			-|=|d|default)
+				MARKER="-"
+				;;
+			!|+|i|h|important|high)
+				MARKER="!"
+				;;
+			X|c|completed|done)
+				MARKER="X"
+				;;
+			*)
+				oops "Unknown marker"
+				usage
+				exit 6
+				;;
+		esac
+		$SED_CMD -i -e "$2s/^[!\+-=_ ]\{0,2\}\(.*\)/$MARKER \1/" $TOTO_TASK_FILE
+	fi
+}
+
+function toto_log {
+	[ $DEBUG ] && echo "Calling toto_log ( $@ )"
+	
+	if [[ -z $1 || $1 == "a" || $1 == "all" ]]; then
+		$SED_CMD '/^X/!d' $TOTO_TASK_FILE >> $TOTO_LOG_FILE
+		$SED_CMD -i -e '/^X/d' $TOTO_TASK_FILE
+	else
+		$SED_CMD "$1!d" $TOTO_TASK_FILE >> $TOTO_LOG_FILE
+		$SED_CMD -i -e "$1d" $TOTO_TASK_FILE
+	fi
+}
+
+function ohai {
+	echo -e "\e[1;34m==> \e[0m"$@
+}
+
+function oops {
+	echo -e "\e[0;33m/!\ \e[0m"$@
+}
+
+function onoe {
+	echo -e "\e[1;31m!!! \e[0m"$@
+}
+
+#
+# Check that required elements are in the path
+#
+GETOPT_CMD=$(which getopt)
+GREP_CMD=$(which grep)
+SED_CMD=$(which sed)
+if [[ ! $GETOPT_CMD || ! $GREP_CMD || ! $SED_CMD ]]; then
+	onoe "This program requires 'getopt', 'grep' and 'sed' utilities to be in your path."
+	exit 1
+fi
+
+#
+# Setup the required tools
+#
+GETOPT_VERSION=$($GETOPT_CMD -V | $GREP_CMD "enhanced")
+GREP_ARGS="-n --color=never -E"
+
+#
+# Parse optional flags
+#
+VERBOSE=
+DEBUG=
+FLAG_TASK_FILE=
+FLAG_LOG_FILE=
+
+function usage {
+	cat<<EOF
+$(basename $0) [-h|--help] [-V|--version] [-d|--debug] [-v|--verbose]
+    [-f|--file <task_file>] [-l|-L|--logfile <log_file>]
+    COMMAND [COMMAND_OPTIONS]
+
+  Maintains a todo list in a simple man-editable text file.
+  Supports task priority and due dates.
+
+  Note: If your system has the non-enhanced version of 'getopt' (which is the
+  case by default on BSD systems, including Mac OS), only the short version
+  of the following options are available.
+
+    --help, -h       : Print this help, then exit.
+    --version, -V    : Print the software version, then exit.
+    --debug, -d      : Extended information about the script function.
+    --verbose, -v    : Display a summary of the executed operations.
+
+    --file, -f       : Specifies the file to read the current tasks.
+                       Default: \$TOTO_TASK_FILE environment variable or
+                       $HOME/todo.txt
+    --logfile, -l, -L: Specifies the file to log the completed tasks.
+                       Default: \$TOTO_LOG_FILE environment variable or
+                       $HOME/done.txt
+
+COMMANDS and associated options:
+
+  a|add <[P] task>   : Adds a new task in the list.
+                       P is the prority marker :
+                       use '!' or '+' for important tasks;
+                       use '', '-' or '=' for default priority tasks;
+                       use '_' for low priority tasks.
+                       Note: 'X' is reserved for completed tasks.
+
+  [P] task           : An alias for 'add [P] task'
+
+  ls|list            : List uncompleted tasks in the order they were set.
+      [a|all]        : Include completed but not logged tasks in the list.
+      [b|both]       : List all tasks, including completed and logged tasks.
+      [!|+|i|h|important|high]:
+                       Only list high priority tasks.
+      [_|u|l|unimportant|low]:
+                       Only list low priority (i.e. someday) tasks.
+      [-|=|d|default]: Only list default priority tasks.
+      [X|c|completed|done]:
+                       Only list completed tasks.
+      [L|log]        : List logged tasks.
+
+  la|list-all        : An alias for 'list all'
+
+  ll|list-log        : An alias for 'list log'
+
+  r|rank             : List the uncompleted task in the following order
+                       1) high priority, 2) default priority,
+                       3) low priority.
+                       Within each section, tasks are display in the order they were set.
+
+  D|due              : List uncompleted tasks with a matching due date.
+                       The due date in the taks is specified using 'due:YYYY-MM-DD'.
+                       If no due date parameter is given, diplay the tasks due today.
+      [YYYY-MM-DD]   : Display tasks due on the specified date.
+      [+N(y|m|w|d)]  : Display tasks due in the next N years, months, week, days.
+      [o|overdue]    : Display overdue tasks (due today and before).
+
+  m|mark <N>         : Mark the task number N with the specified marker
+      [!|+|i|h|important|high] :
+                       Mark the task number N as high priority.
+      [_|u|l|unimportant|low] :
+                       Mark the task number N as low priority.
+      [-|=|d|default]: Mark the task number N as default priority.
+      [X|c|completed|done]:
+                       Mark the task number N as completed.
+
+  !|+|i|h|important|high <N>:
+                       An alias for 'mark N high'
+  _|u|l|unimportant|low <N>:
+                       An alias for 'mark N low'
+  -|=|default <N>    : An alias for 'mark N default'
+  X|c|completed|done <N>:
+                       An alias for 'mark N completed'
+
+  L|log [N|[a|all]]  : Log the task N if it is marked as completed.
+                       If no task number is specified, or 'a' or 'all' is given
+                       as task number, all completed tasks are logged.
+
+  s|search           : Return all the unlogged tasks matching PATTERN.
+     [b|both]        : Search for PATTERN in both task file and the log file.
+     [l|log]         : Search for PATTERN in the logged tasks only.
+     PATTERN         : PATTERN to search for. This can be a string (no quotes
+                       required) or a valid extended regular expression.
+
+  e|edit <N|[a|all]> <PATTERN/REPLACEMENT>:
+                       Edit task number N by replacing the specified PATTERN
+                       by the specified REPLACEMENT. One can use strings or
+                       regular expressions, as per the 'sed' command.
+                       When 'a' or 'all' is specified as task number, all tasks
+                       matching PATTERN are edited using REPLACEMENT.
+EOF
+}
+
+if [ "$GETOPT_VERSION" == "enhanced" ]; then
+	args=`$GETOPT_CMD -u -o hVdvf:l:L: -l help,debug,verbose,version,file:,logfile: -- $*`
+else
+	args=`$GETOPT_CMD hVdvf:l:L: $*`
+fi
+
+set -- $args
+while true; do
+	case "$1"
+	in
+		-h|--help)
+			usage
+			exit 0
+			;;
+		-d|--debug)
+			echo "Debug mode ON"
+			DEBUG=1
+			VERBOSE=1
+			shift
+			;;
+		-v|--verbose)
+			if [ ! $VERBOSE ]; then
+				echo "Verbose mode ON"
+				VERBOSE=1
+			fi
+			shift
+			;;
+		-V|--version)
+			version
+			exit 0
+			;;
+		-f|--file)
+			FLAG_TASK_FILE=$2;
+			shift 2
+			;;
+		-l|-L|--logfile)
+			FLAG_LOG_FILE=$2;
+			shift 2
+			;;
+		--)
+			shift; break
+			;;
+		*)
+			onoe "Internal error!"
+			exit 2
+			;;
+	esac
+done
+
+[ $VERBOSE ] && ohai "Parsing command-line arguments"
+[ $DEBUG ] && echo "Arguments string: $args"
+[ $DEBUG ] && echo "Remaining $# arguments after 'getopt': $*"
+
+#
+# Set the todo file based on the specified location
+# or the global environment variable, or fallback to the
+# script default values
+# TODO: Clean file setting section and make it a function
+#
+[ $VERBOSE ] && ohai "Setting task and log files"
+
+if [ ! $TOTO_TASK_FILE ]; then
+	TOTO_TASK_FILE=$HOME/todo.txt
+	[ $DEBUG ] && echo "TOTO_TASK_FILE variable not set, reverting to '$TOTO_TASK_FILE'"
+else
+	[ $DEBUG ] && echo "Using TOTO_TASK_FILE env. variable value '$TOTO_TASK_FILE'"
+fi
+if [ $FLAG_TASK_FILE ]; then
+	TOTO_TASK_FILE=$FLAG_TASK_FILE
+	[ $DEBUG ] && echo "TOTO_TASK_FILE variable overridden by user flag value '$TOTO_TASK_FILE'"
+fi
+
+if [ ! $TOTO_LOG_FILE ]; then 
+	TOTO_LOG_FILE=$HOME/done.txt
+	[ $DEBUG ] && echo "TOTO_LOG_FILE variable not set, reverting to '$TOTO_LOG_FILE'"
+else
+	[ $DEBUG ] && echo "Using TOTO_LOG_FILE env. variable value '$TOTO_LOG_FILE'"
+fi
+if [ $FLAG_LOG_FILE ]; then
+	TOTO_LOG_FILE=$FLAG_LOG_FILE
+	[ $DEBUG ] && echo "TOTO_LOG_FILE variable overridden by user flag value '$TOTO_LOG_FILE'"
+fi
+
+[ $VERBOSE ] && echo "Task file set to '$TOTO_TASK_FILE'"
+[ $VERBOSE ] && echo "Log file set to '$TOTO_LOG_FILE'"
+
+#
+# Create the chosen files if necessary
+#
+[ -w $TOTO_TASK_FILE ] || (touch $TOTO_TASK_FILE && ohai "$TOTO_TASK_FILE was created.") || \
+	(onoe "Error in creating task file $TOTO_TASK_FILE: $!" && exit 3)
+
+[ -w $TOTO_LOG_FILE ] || (touch $TOTO_LOG_FILE && ohai "$TOTO_LOG_FILE was created.") || \
+	(onoe "Error in creating log file $TOTO_LOG_FILE: $!" && exit 3)
+
+#
+# Do some action based on first non-optional args
+#
+[ $VERBOSE ] && ohai "Performing requested action(s)"
+if [ -s /dev/stdin ]; then
+	while read IN; do
+		toto_action $IN
+	done
+else
+	toto_action $@;
+fi
