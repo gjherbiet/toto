@@ -56,5 +56,12 @@ echo "Testing files location from user flags (alternate option)"
 rm -f $TASKFILE"_FLAG"
 rm -f $LOGFILE"_FLAG"
 
+# No line number display
+TASKFILE="test/test001_todo.txt"
+LOGFILE="test/test001_done.txt"
+echo "Testing no line number display (-N)"
+./toto -N -f "$TASKFILE" -l "$LOGFILE" > "$OUTFILE" && \
+	[ `cat $OUTFILE | grep -v -E "^[0-9]{1,}:" | wc -l` -eq 9 ] || \
+	(echo -e "\e[1;31m!!! \e[0m Failed" && exit 2)
 
 rm -f $OUTFILE

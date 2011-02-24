@@ -2,7 +2,7 @@
 =============
 
 	toto [-h|--help] [-V|--version] [-d|--debug] [-v|--verbose]
-	    [-f|--file <task_file>] [-l|-L|--logfile <log_file>]
+	    [-f|--file <task_file>] [-l|-L|--logfile <log_file>] [-N|--no-line-number]
 	    COMMAND [COMMAND_OPTIONS]
 
 	  Maintains a todo list in a simple man-editable text file.
@@ -23,6 +23,8 @@
 	    --logfile, -l, -L: Specifies the file to log the completed tasks.
 	                       Default: $TOTO_LOG_FILE environment variable or
 	                       /Users/Guillaume/done.txt
+	    --no-line-number, -N:
+	                       Do not display the task line number before each task.
 
 	COMMANDS and associated options:
 

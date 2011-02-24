@@ -295,7 +295,7 @@ fi
 # Setup the required tools
 #
 GETOPT_VERSION=$($GETOPT_CMD -V | $GREP_CMD "enhanced")
-GREP_ARGS="-n --color=never -E"
+GREP_ARGS="--color=never -E"
 
 #
 # Parse optional flags
@@ -304,11 +304,12 @@ VERBOSE=
 DEBUG=
 FLAG_TASK_FILE=
 FLAG_LOG_FILE=
+FLAG_NO_LINE_NUMBER=
 
 function usage {
 	cat<<EOF
 $(basename $0) [-h|--help] [-V|--version] [-d|--debug] [-v|--verbose]
-    [-f|--file <task_file>] [-l|-L|--logfile <log_file>]
+    [-f|--file <task_file>] [-l|-L|--logfile <log_file>] [-N|--no-line-number]
     COMMAND [COMMAND_OPTIONS]
 
   Maintains a todo list in a simple man-editable text file.
@@ -329,6 +330,8 @@ $(basename $0) [-h|--help] [-V|--version] [-d|--debug] [-v|--verbose]
     --logfile, -l, -L: Specifies the file to log the completed tasks.
                        Default: \$TOTO_LOG_FILE environment variable or
                        $HOME/done.txt
+    --no-line-number, -N:
+                       Do not display the task line number before each task.
 
 COMMANDS and associated options:
 
@@ -406,9 +409,9 @@ EOF
 }
 
 if [ "$GETOPT_VERSION" == "enhanced" ]; then
-	args=`$GETOPT_CMD -u -o hVdvf:l:L: -l help,debug,verbose,version,file:,logfile: -- $*`
+	args=`$GETOPT_CMD -u -o hVdvf:l:L:N -l help,debug,verbose,version,file:,logfile:,no-line-number -- $*`
 else
-	args=`$GETOPT_CMD hVdvf:l:L: $*`
+	args=`$GETOPT_CMD hVdvf:l:L:N $*`
 fi
 
 set -- $args
@@ -444,6 +447,10 @@ while true; do
 			FLAG_LOG_FILE=$2;
 			shift 2
 			;;
+		-N|--no-line-number)
+			FLAG_NO_LINE_NUMBER=1
+			shift
+			;;
 		--)
 			shift; break
 			;;
@@ -453,6 +460,10 @@ while true; do
 			;;
 	esac
 done
+
+if [ ! $FLAG_NO_LINE_NUMBER ]; then
+	GREP_ARGS="-n $GREP_ARGS"
+fi
 
 [ $VERBOSE ] && ohai "Parsing command-line arguments"
 [ $DEBUG ] && echo "Arguments string: $args"

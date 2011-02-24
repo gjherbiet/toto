@@ -52,6 +52,6 @@ echo "Testing 'D o'"
 diff $OUTFILE "$ALTFILE" || (echo -e "\e[1;31m!!! \e[0m Failed" && exit 2)
 
 
-#rm -f $TASKFILE
+rm -f $TASKFILE
 rm -f $OUTFILE
 rm -f $ALTFILE

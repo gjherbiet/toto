@@ -85,11 +85,18 @@ Let's add a second, higher priority task. The `add` command is purely optional, 
 	$ toto + High priority task
 
 
-Now display our todo list (all existing tasks are prefixed by their line number on the task list file):
+Now display our todo list (all existing tasks are prefixed by their line number on the task list file, which identifies the task):
 
 	$ toto
 	1:_ This is my first task
 	2:+ High priority task
+
+If you want to avoid the line numbers to be displayed (because you do not
+intend to modify any of the task), you can add the `-N` or `--no-line-number` option to your call:
+
+	$ toto -N
+	_ This is my first task
+	+ High priority task
 
 Note that we could have called `toto list` or `toto ls`, they are all equivalent.
 
@@ -196,10 +203,15 @@ This also support multiline streams. So if you have a second todo file that you 
 
 	$ cat secondary_todo.txt | toto
 
+Even more impressive, you can use `toto -N` option to copy only a subset of your tasks from your secondary task file to the main one. The following example shows how to, for instance, merge important tasks only:
+
+	$ toto -N -f secondary_todo.txt list high | toto
+
 On `toto`'s todo list
 ---------------------
 
 	! More extensive testing and bug fixing (currently ongoing)
+	- "Clean" display of tasks in list and rank commands, even if they are not properly formatted on the task file
 	_ Automated due date generation
 	_ Colored output based on priority level
 	_ Add-ons and external tools
