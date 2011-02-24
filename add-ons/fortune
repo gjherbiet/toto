@@ -1,0 +1,16 @@
+#!/bin/bash
+if which toto > /dev/null; then
+	
+	TODAY=`toto -N due`
+	if [ "$TODAY" != "" ]; then
+		echo "Todo today:"
+		echo $TODAY
+	fi
+
+	NEXT=`toto -N rank`
+	if [ "$NEXT" != "" ]; then
+		echo "Todo next:"
+		echo $NEXT
+	fi
+fi
+
