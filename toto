@@ -71,12 +71,17 @@ function toto_action {
 				echo $@ >> $TOTO_TASK_FILE
 				;;
 			!|+|-|=|_|X)
-				if echo $@ | $GREP_CMD -E "^(!|\+|-|=|_) [0-9]{1,}$"; then
-					[ $VERBOSE ] && echo "Doing 'quick mark'"
-					toto_mark $@
+				if echo $@ | $GREP_CMD -E "^(!|\+|-|=|_|X)$" > /dev/null; then
+					[ $VERBOSE ] && echo "Doing 'quick list'"
+					toto_list $@
 				else
-					[ $VERBOSE ] && echo "Doing 'quick add'"
-					echo $@ >> $TOTO_TASK_FILE
+					if echo $@ | $GREP_CMD -E "^(!|\+|-|=|_|X) [0-9]{1,}$" > /dev/null; then
+						[ $VERBOSE ] && echo "Doing 'quick mark'"
+						toto_mark $@
+					else
+						[ $VERBOSE ] && echo "Doing 'quick add'"
+						echo $@ >> $TOTO_TASK_FILE
+					fi
 				fi
 				;;
 			m|mark)
@@ -85,8 +90,18 @@ function toto_action {
 				toto_mark $2 $1
 				;;
 			i|h|important|high|d|default|u|l|unimportant|low|c|completed|done)
-				[ $VERBOSE ] && echo "Doing quick 'mark'"
-				toto_mark $1 $2
+				if echo $@ | $GREP_CMD -E "^$1$" > /dev/null; then
+					[ $VERBOSE ] && echo "Doing 'quick list'"
+					toto_list $@
+				else
+					if echo $@ | $GREP_CMD -E "^$1 [0-9]{1,}$" > /dev/null; then
+						[ $VERBOSE ] && echo "Doing quick 'mark'"
+						toto_mark $1 $2
+					else
+						oops "This function requires a marker as first argument and a task number as second argument"
+						exit 5
+					fi
+				fi
 				;;
 			L|log)
 				[ $VERBOSE ] && echo "Doing 'log'"
@@ -228,7 +243,6 @@ function toto_mark {
 	
 	if [[ -z $1 || -z $2 ]]; then
 		oops "This function requires a task number as first argument and a marker as second argument"
-		usage
 		exit 5
 	else
 		MARKER=
@@ -357,8 +371,13 @@ COMMANDS and associated options:
       [L|log]        : List logged tasks.
 
   la|list-all        : An alias for 'list all'
-
   ll|list-log        : An alias for 'list log'
+  !|+|i|h|important|high:
+                       An alias for 'list high'
+  _|u|l|unimportant|low:
+                       An alias for 'list low'
+  -|=|default        : An alias for 'list default'
+  X|c|completed|done : An alias for 'list completed'
 
   r|rank             : List the uncompleted task in the following order
                        1) high priority, 2) default priority,

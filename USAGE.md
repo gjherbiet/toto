@@ -50,8 +50,13 @@
 	      [L|log]        : List logged tasks.
 
 	  la|list-all        : An alias for 'list all'
-
 	  ll|list-log        : An alias for 'list log'
+	  !|+|i|h|important|high:
+	                       An alias for 'list high'
+	  _|u|l|unimportant|low:
+	                       An alias for 'list low'
+	  -|=|default        : An alias for 'list default'
+	  X|c|completed|done : An alias for 'list completed'
 
 	  r|rank             : List the uncompleted task in the following order
 	                       1) high priority, 2) default priority,
