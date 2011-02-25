@@ -1,16 +1,15 @@
 #!/bin/bash
 if which toto > /dev/null; then
 	
-	TODAY=`toto -N due`
-	if [ "$TODAY" != "" ]; then
+	if [ `toto -N due | wc -l` -gt 0 ]; then
 		echo "Todo today:"
-		echo $TODAY
+		echo "-----------"
+		toto -N due
 	fi
-
-	NEXT=`toto -N rank`
-	if [ "$NEXT" != "" ]; then
-		echo "Todo next:"
-		echo $NEXT
+	if [ `toto -N r | wc -l` -gt 0 ]; then
+		echo "All unachieved tasks:"
+		echo "---------------------"
+		toto -N r
 	fi
 fi
 
