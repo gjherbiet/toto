@@ -103,3 +103,7 @@
 	                       regular expressions, as per the 'sed' command.
 	                       When 'a' or 'all' is specified as task number, all tasks
 	                       matching PATTERN are edited using REPLACEMENT.
+
+	  o|open [L|log]     : Open the task file (or log file if optional argument
+	                       'L' or 'log' is passed) in the program designated by
+	                       the \$EDITOR environment variable.

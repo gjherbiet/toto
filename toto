@@ -118,6 +118,16 @@ function toto_action {
 				shift
 				toto_edit $@
 				;;
+			o|open)
+				[ $VERBOSE ] && echo "Doing 'open'"
+				case "$2"
+				in
+					L|log)
+						$EDITOR $TOTO_LOG_FILE;;
+					*)
+						$EDITOR $TOTO_TASK_FILE;;
+				esac
+				;;
 			*)
 				[ $VERBOSE ] && echo "Doing 'quick add'"
 				echo $@ >> $TOTO_TASK_FILE
@@ -424,6 +434,10 @@ COMMANDS and associated options:
                        regular expressions, as per the 'sed' command.
                        When 'a' or 'all' is specified as task number, all tasks
                        matching PATTERN are edited using REPLACEMENT.
+
+  o|open [L|log]     : Open the task file (or log file if optional argument
+                       'L' or 'log' is passed) in the program designated by
+                       the \$EDITOR environment variable.
 EOF
 }
 
