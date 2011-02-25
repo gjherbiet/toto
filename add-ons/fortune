@@ -4,12 +4,12 @@ if which toto > /dev/null; then
 	if [ `toto -N due | wc -l` -gt 0 ]; then
 		echo "Todo today:"
 		echo "-----------"
-		toto -N due
+		toto -N due | fold -s
 	fi
 	if [ `toto -N r | wc -l` -gt 0 ]; then
 		echo "All unachieved tasks:"
 		echo "---------------------"
-		toto -N r
+		toto -N r | fold -s
 	fi
 fi
 
