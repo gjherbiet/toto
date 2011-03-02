@@ -10,12 +10,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -63,7 +63,7 @@ function toto_action {
 			D|due)
 				[ $VERBOSE ] && echo "Doing 'due'"
 				shift
-				toto_due $1
+				toto_due $@
 				;;
 			a|add)
 				[ $VERBOSE ] && echo "Doing 'add'"
@@ -179,7 +179,7 @@ function toto_list {
 
 function toto_search {
 	[ $DEBUG ] && echo "Calling toto_search ( $@ )"
-	
+
 	case "$1"
 	in
 		l|log)
@@ -204,40 +204,45 @@ function toto_search {
 
 function toto_due {
 	[ $DEBUG ] && echo "Calling toto_due ( $@ )"
-	
+
 	PATTERN="^[^X].*due:"
-	
+
 	if [[ -z $1 || $1 == "0" ]]; then
-		TODAY=$(date -j +%Y-%m-%d)
+		if [ "$GNU_DATE" == "" ]; then
+			TODAY=$($DATE_CMD -j +%Y-%m-%d)
+		else
+			TODAY=$($DATE_CMD +%Y-%m-%d)
+		fi
 		$GREP_CMD $GREP_ARGS "$PATTERN$TODAY" "$TOTO_TASK_FILE"
 	else
-		case "$1"
-		in
-			o|overdue|+*)
-				$GREP_CMD $GREP_ARGS "$PATTERN" "$TOTO_TASK_FILE" | while read LINE; do
-					DATE_STRING=$(echo $LINE | $SED_CMD -e 's/^[^X].*due:\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\)/\1/g')
-					LINE_DATE=$(date -j -f %Y-%m-%d $DATE_STRING +%s)
-					TODAY=$(date -j +%s)
-					if [[ $1 == "o" || $1 == "overdue" ]]; then
-						[ $LINE_DATE -le $TODAY ] && echo $LINE
-					else
-						DUE_DATE=$(date -j -v $1 +%s)
-						[ $TODAY -le $LINE_DATE ] && [ $LINE_DATE -le $DUE_DATE ] && \
-							echo $LINE
-					fi
-				done
-				;;
-			*)
-				[ $DEBUG ] && echo "Using free form due date"
-				$GREP_CMD $GREP_ARGS "due:$1" "$TOTO_TASK_FILE"
-				;;
-		esac
+		$GREP_CMD $GREP_ARGS "$PATTERN" "$TOTO_TASK_FILE" | while read LINE; do
+			DATE_STRING=$(echo $LINE | $SED_CMD -e 's/^[^X].*due:\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\)/\1/g')
+			if [ "$GNU_DATE" == "" ]; then
+				LINE_DATE=$($DATE_CMD -j -f %Y-%m-%d $DATE_STRING +%s)
+				TODAY=$($DATE_CMD -j +%s)
+			else
+				LINE_DATE=$($DATE_CMD -d $DATE_STRING +%s)
+				TODAY=$($DATE_CMD +%s)
+			fi
+			if [[ $1 == "o" || $1 == "overdue" ]]; then
+				[ $LINE_DATE -le $TODAY ] && echo $LINE
+			else
+				TIMER=$(echo $@)
+				if [ "$GNU_DATE" == "" ]; then
+					DUE_DATE=$($DATE_CMD -j -v "$TIMER" +%s)
+				else
+					DUE_DATE=$($DATE_CMD -d "$TIMER" +%s)
+				fi
+				[ $TODAY -le $LINE_DATE ] && [ $LINE_DATE -le $DUE_DATE ] && \
+					echo $LINE
+			fi
+		done
 	fi
 }
 
 function toto_edit {
 	[ $DEBUG ] && echo "Calling toto_edit ( $@ )"
-	
+
 	LINE=$1;
 	shift;
 	if [[ $LINE == "a" || $LINE == "all" ]]; then
@@ -250,7 +255,7 @@ function toto_edit {
 
 function toto_mark {
 	[ $DEBUG ] && echo "Calling toto_mark ( $@ )"
-	
+
 	if [[ -z $1 || -z $2 ]]; then
 		oops "This function requires a task number as first argument and a marker as second argument"
 		exit 5
@@ -282,7 +287,7 @@ function toto_mark {
 
 function toto_log {
 	[ $DEBUG ] && echo "Calling toto_log ( $@ )"
-	
+
 	if [[ -z $1 || $1 == "a" || $1 == "all" ]]; then
 		$SED_CMD '/^X/!d' $TOTO_TASK_FILE >> $TOTO_LOG_FILE
 		$SED_CMD -i -e '/^X/d' $TOTO_TASK_FILE
@@ -310,8 +315,10 @@ function onoe {
 GETOPT_CMD=$(which getopt)
 GREP_CMD=$(which grep)
 SED_CMD=$(which sed)
-if [[ ! $GETOPT_CMD || ! $GREP_CMD || ! $SED_CMD ]]; then
-	onoe "This program requires 'getopt', 'grep' and 'sed' utilities to be in your path."
+DATE_CMD=$(which date)
+if [[ ! $GETOPT_CMD || ! $GREP_CMD || ! $SED_CMD || ! $DATE_CMD ]]; then
+	onoe "This program requires 'getopt', 'grep',"
+	onoe "'sed' and 'date' utilities to be in your path."
 	exit 1
 fi
 
@@ -319,6 +326,7 @@ fi
 # Setup the required tools
 #
 GETOPT_VERSION=$($GETOPT_CMD -V | $GREP_CMD "enhanced")
+GNU_DATE=$($DATE_CMD --version | $GREP_CMD "GNU")
 GREP_ARGS="--color=never -E"
 
 #
@@ -397,8 +405,10 @@ COMMANDS and associated options:
   D|due              : List uncompleted tasks with a matching due date.
                        The due date in the taks is specified using 'due:YYYY-MM-DD'.
                        If no due date parameter is given, diplay the tasks due today.
-      [YYYY-MM-DD]   : Display tasks due on the specified date.
       [+N(y|m|w|d)]  : Display tasks due in the next N years, months, week, days.
+                       (This option only works with BSD 'date')
+      [next|N ...]   : Display tasks due in the next N years, months, week, days.
+                       (This option only works with GNU 'date')
       [o|overdue]    : Display overdue tasks (due today and before).
 
   m|mark <N>         : Mark the task number N with the specified marker
@@ -521,7 +531,7 @@ if [ $FLAG_TASK_FILE ]; then
 	[ $DEBUG ] && echo "TOTO_TASK_FILE variable overridden by user flag value '$TOTO_TASK_FILE'"
 fi
 
-if [ ! $TOTO_LOG_FILE ]; then 
+if [ ! $TOTO_LOG_FILE ]; then
 	TOTO_LOG_FILE=$HOME/done.txt
 	[ $DEBUG ] && echo "TOTO_LOG_FILE variable not set, reverting to '$TOTO_LOG_FILE'"
 else
@@ -555,3 +565,4 @@ if [ -s /dev/stdin ]; then
 else
 	toto_action $@;
 fi
+

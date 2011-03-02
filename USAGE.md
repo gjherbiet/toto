@@ -66,8 +66,10 @@
 	  D|due              : List uncompleted tasks with a matching due date.
 	                       The due date in the taks is specified using 'due:YYYY-MM-DD'.
 	                       If no due date parameter is given, diplay the tasks due today.
-	      [YYYY-MM-DD]   : Display tasks due on the specified date.
 	      [+N(y|m|w|d)]  : Display tasks due in the next N years, months, week, days.
+	                       (This option only works with BSD 'date')
+	      [next|N ...]   : Display tasks due in the next N years, months, week, days.
+	                       (This option only works with GNU 'date')
 	      [o|overdue]    : Display overdue tasks (due today and before).
 
 	  m|mark <N>         : Mark the task number N with the specified marker
@@ -107,3 +109,4 @@
 	  o|open [L|log]     : Open the task file (or log file if optional argument
 	                       'L' or 'log' is passed) in the program designated by
 	                       the \$EDITOR environment variable.
+
