@@ -238,6 +238,7 @@ function toto_due {
 			fi
 		done
 	fi
+	echo -n ""	# This is just to ensure a 0 return value
 }
 
 function toto_edit {
@@ -326,7 +327,7 @@ fi
 # Setup the required tools
 #
 GETOPT_VERSION=$($GETOPT_CMD -V | $GREP_CMD "enhanced")
-GNU_DATE=$($DATE_CMD --version | $GREP_CMD "GNU")
+GNU_DATE=$($DATE_CMD --version 2> /dev/null | $GREP_CMD "GNU")
 GREP_ARGS="--color=never -E"
 
 #
