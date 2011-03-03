@@ -342,7 +342,7 @@ FLAG_NO_LINE_NUMBER=
 function usage {
 	cat<<EOF
 $(basename $0) [-h|--help] [-V|--version] [-d|--debug] [-v|--verbose]
-    [-f|--file <task_file>] [-l|-L|--logfile <log_file>] [-N|--no-line-number]
+    [-f|-t|--file <task_file>] [-l|-L|--logfile <log_file>] [-N|--no-line-number]
     COMMAND [COMMAND_OPTIONS]
 
   Maintains a todo list in a simple man-editable text file.
@@ -357,7 +357,7 @@ $(basename $0) [-h|--help] [-V|--version] [-d|--debug] [-v|--verbose]
     --debug, -d      : Extended information about the script function.
     --verbose, -v    : Display a summary of the executed operations.
 
-    --file, -f       : Specifies the file to read the current tasks.
+    --file, -f, -t   : Specifies the file to read the current tasks.
                        Default: \$TOTO_TASK_FILE environment variable or
                        $HOME/todo.txt
     --logfile, -l, -L: Specifies the file to log the completed tasks.
@@ -453,9 +453,9 @@ EOF
 }
 
 if [ "$GETOPT_VERSION" == "enhanced" ]; then
-	args=`$GETOPT_CMD -u -o hVdvf:l:L:N -l help,debug,verbose,version,file:,logfile:,no-line-number -- $*`
+	args=`$GETOPT_CMD -u -o hVdvf:t:l:L:N -l help,debug,verbose,version,file:,logfile:,no-line-number -- $*`
 else
-	args=`$GETOPT_CMD hVdvf:l:L:N $*`
+	args=`$GETOPT_CMD hVdvf:t:l:L:N $*`
 fi
 
 set -- $args
@@ -483,7 +483,7 @@ while true; do
 			version
 			exit 0
 			;;
-		-f|--file)
+		-f|-t|--file)
 			FLAG_TASK_FILE=$2;
 			shift 2
 			;;

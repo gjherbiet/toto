@@ -2,7 +2,7 @@
 =============
 
 	toto [-h|--help] [-V|--version] [-d|--debug] [-v|--verbose]
-	    [-f|--file <task_file>] [-l|-L|--logfile <log_file>] [-N|--no-line-number]
+	    [-f|-t|--file <task_file>] [-l|-L|--logfile <log_file>] [-N|--no-line-number]
 	    COMMAND [COMMAND_OPTIONS]
 
 	  Maintains a todo list in a simple man-editable text file.
@@ -17,7 +17,7 @@
 	    --debug, -d      : Extended information about the script function.
 	    --verbose, -v    : Display a summary of the executed operations.
 
-	    --file, -f       : Specifies the file to read the current tasks.
+	    --file, -f, -t   : Specifies the file to read the current tasks.
 	                       Default: $TOTO_TASK_FILE environment variable or
 	                       /Users/Guillaume/todo.txt
 	    --logfile, -l, -L: Specifies the file to log the completed tasks.
