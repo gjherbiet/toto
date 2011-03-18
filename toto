@@ -251,7 +251,7 @@ function toto_edit {
 	else
 		PATTERN="${LINE}s/$@/g"
 	fi
-	$SED_CMD -i -e "$PATTERN" $TOTO_TASK_FILE
+	$SED_CMD -i "" -e "$PATTERN" $TOTO_TASK_FILE
 }
 
 function toto_mark {
@@ -282,7 +282,7 @@ function toto_mark {
 				exit 6
 				;;
 		esac
-		$SED_CMD -i -e "$2s/^[!\+-=_ ]\{0,2\}\(.*\)/$MARKER \1/" $TOTO_TASK_FILE
+		$SED_CMD -i "" -e "$2s/^[!\+-=_ ]\{0,2\}\(.*\)/$MARKER \1/" $TOTO_TASK_FILE
 	fi
 }
 
@@ -291,10 +291,10 @@ function toto_log {
 
 	if [[ -z $1 || $1 == "a" || $1 == "all" ]]; then
 		$SED_CMD '/^X/!d' $TOTO_TASK_FILE >> $TOTO_LOG_FILE
-		$SED_CMD -i -e '/^X/d' $TOTO_TASK_FILE
+		$SED_CMD -i "" -e '/^X/d' $TOTO_TASK_FILE
 	else
 		$SED_CMD "$1!d" $TOTO_TASK_FILE >> $TOTO_LOG_FILE
-		$SED_CMD -i -e "$1d" $TOTO_TASK_FILE
+		$SED_CMD -i "" -e "$1d" $TOTO_TASK_FILE
 	fi
 }
 
