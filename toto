@@ -130,7 +130,7 @@ function toto_action {
 				;;
 			*)
 				[ $VERBOSE ] && echo "Doing 'quick add'"
-				echo $@ >> $TOTO_TASK_FILE
+				echo "-" $@ >> $TOTO_TASK_FILE
 				;;
 	esac
 }
