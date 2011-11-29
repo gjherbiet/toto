@@ -282,7 +282,7 @@ function toto_mark {
 				exit 6
 				;;
 		esac
-		$SED_CMD -i "" -e "$2s/^[!\+-=_ ]\{0,2\}\(.*\)/$MARKER \1/" $TOTO_TASK_FILE
+		$SED_CMD -i "" -e "$2s/^[X!\+-=_ ]\{0,2\}\(.*\)/$MARKER \1/" $TOTO_TASK_FILE
 	fi
 }
 
