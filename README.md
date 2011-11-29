@@ -211,7 +211,6 @@ On `toto`'s todo list
 ---------------------
 
 	! More extensive testing and bug fixing (currently ongoing)
-	- "Clean" display of tasks in list and rank commands, even if they are not properly formatted on the task file
 	_ Automated due date generation
 	_ Colored output based on priority level
 	_ Add-ons and external tools
