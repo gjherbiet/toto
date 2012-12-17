@@ -24,7 +24,7 @@
 #
 ##############################################################################
 
-VERSION="0.2.1"
+VERSION="0.2.2"
 function version {
 	echo "This is $(basename $0) v. $VERSION"
 	echo "Copyright (c) 2011 Guillaume-Jean Herbiet  (http://herbiet.net)"
