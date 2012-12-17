@@ -68,7 +68,7 @@ function toto_action {
 			a|add)
 				[ $VERBOSE ] && echo "Doing 'add'"
 				shift
-				echo $@ >> $TOTO_TASK_FILE
+				toto_add $@
 				;;
 			!|+|-|=|_|X)
 				if echo $@ | $GREP_CMD -E "^(!|\+|-|=|_|X)$" > /dev/null; then
@@ -80,7 +80,7 @@ function toto_action {
 						toto_mark $@
 					else
 						[ $VERBOSE ] && echo "Doing 'quick add'"
-						echo $@ >> $TOTO_TASK_FILE
+						toto_add $@
 					fi
 				fi
 				;;
@@ -129,8 +129,8 @@ function toto_action {
 				esac
 				;;
 			*)
-				[ $VERBOSE ] && echo "Doing 'quick add'"
-				echo "-" $@ >> $TOTO_TASK_FILE
+				[ $VERBOSE ] && echo "Doing 'quick add' as fall-back action."
+				toto_add $@
 				;;
 	esac
 }
@@ -240,6 +240,17 @@ function toto_due {
 	fi
 	echo -n ""	# This is just to ensure a 0 return value
 }
+
+function toto_add {
+	[ $DEBUG ] && echo "Calling toto_add ( $@ )"
+	
+	if echo $@ | $GREP_CMD -E "^(!|\+|-|=|_|X) " > /dev/null; then
+		echo $@ >> $TOTO_TASK_FILE
+	else
+		echo "- "$@ >> $TOTO_TASK_FILE
+	fi
+}
+
 
 function toto_edit {
 	[ $DEBUG ] && echo "Calling toto_edit ( $@ )"
